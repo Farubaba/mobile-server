@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import com.farubaba.mobile.base.util.ConcurrentUtil;
+import com.farubaba.mobile.base.util.UrlUtil;
 import com.farubaba.mobile.server.action.OkHttpAction;
 import com.farubaba.mobile.server.model.User;
 import com.google.gson.Gson;
@@ -33,8 +34,7 @@ import okio.BufferedSink;
  *
  */
 public class OkHttpFunBase {
-	public static final String port = "8090";
-	public static final String API_CONTEXT= "http://127.0.0.1:"+port+"/test-webapp/";
+	public static final String API_CONTEXT= "http://127.0.0.1:"+UrlUtil.PORT+"/"+UrlUtil.CONTEXT_PATH+"/";
 	public static final Gson gson = new GsonBuilder().create();
 	OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
 			//设置代理，让Charles拦截请求

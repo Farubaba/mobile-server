@@ -76,7 +76,8 @@ public class OkHttpTest {
 	
 	@Test
 	public void postFile(){
-		File file = new File("/environment/git-repo/test-webapp/src/main/webapp/resources/files/test.md");
+		//File file = new File("/environment/git-repo/test-webapp/src/main/webapp/resources/files/test.md");
+		File file = new File("/environment/git-repo/mobile-server/webapp-parent-module/test-webapp/src/main/webapp/resources/files/test.md");
 		MediaType mediaType = MediaType.parse("text/x-markdown; charset=utf-8");
 		String returnFileContent = okHttpBase.postFile(mediaType,file);
 		System.out.println("客户端上传文件之后从response中获取的内容：");
