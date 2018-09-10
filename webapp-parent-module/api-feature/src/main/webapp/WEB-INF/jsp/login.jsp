@@ -64,9 +64,9 @@ String pageName = pageContext.getPage().getClass().getSimpleName();
     	<li>提供正确登录参数，调用<a href="${userlogin}">userLogin.action -> return Object User </a></li>
     	<li>
     	使用form表单提交登录：(输入：<font color="red">farubaba</font> 和 <font color="red">123456</font> 可登录成功!登录成功后，JSON String User 和 Object User其中之一会有值)
-	    <s:form action="doLogin">
-		 	<s:textfield name="userName" label="Your name" />
-		 	<s:textfield name="password" label="Your password" />
+	    <s:form action="doLogin"><p>
+		 	name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <s:textfield name="userName" label="Your name" /><p>
+		 	password : <s:textfield name="password" label="Your password"/><p>
 		 	<s:submit value="登录" cssClass="button" />
 		</s:form>
     	</li>

@@ -5,14 +5,13 @@ import java.util.List;
 import org.business.domain.dao.DataCenter;
 import org.business.domain.dao.DataCenterImpl;
 import org.business.domain.model.User;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.root.feature.json.JsonFactory;
+import org.root.feature.json.JsonService;
 
 public class DataServiceImpl implements DataService {
 
 	private DataCenter dataCenter = new DataCenterImpl(); 
-	private Gson gson = new GsonBuilder().create();
+	private JsonService<?> gson = JsonFactory.getJsonService();
 	
 	@Override
 	public List<User> getUsers(String apiVersion) {
@@ -21,7 +20,7 @@ public class DataServiceImpl implements DataService {
 
 	@Override
 	public String getUserListJson(String apiVersion) {
-		return gson.toJson(getUsers(apiVersion));
+		return gson.toJsonString(getUsers(apiVersion));
 	}
 
 }

@@ -6,9 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import okhttp3.Headers;
-import okhttp3.MultipartBody;
-
 /**
  * MultipartBody有以下几种组成形式：
  * 

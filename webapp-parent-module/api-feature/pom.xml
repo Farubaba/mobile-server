@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <!-- 
   <parent>
     <artifactId>webapp-parent-module</artifactId>
     <groupId>com.farubaba</groupId>
     <version>0.0.1-SNAPSHOT</version>
-  </parent>
+  </parent> 
+  -->
 
   <groupId>com.farubaba</groupId>
   <artifactId>api-feature</artifactId>
@@ -43,18 +45,17 @@
 			<scope>import</scope>
 			<type>pom</type>
 		</dependency>
-		
 		<dependency>
 			<groupId>com.farubaba</groupId>
 			<artifactId>root-feature</artifactId>
 			<version>${feature.version}</version>
-		</dependency>
-		
+		</dependency>		
 		<dependency>
 			<groupId>com.farubaba</groupId>
 			<artifactId>base-feature</artifactId>
 			<version>${feature.version}</version>
 		</dependency>
+
 		<dependency>
 	  		<groupId>com.farubaba</groupId>
 	  		<artifactId>okhttp-feature</artifactId>
@@ -87,15 +88,6 @@
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
-	<!--     
-	<dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      Junit也是可以在compile中在代码里使用的，但通常我们都只在测试中使用，这里是为了方便直接在代码中使用断言才加入compile依赖
-      <scope>compile</scope> 
-    </dependency>
-    -->
     <dependency>
 	  <groupId>javax</groupId>
 	  <artifactId>javaee-api</artifactId>
@@ -145,29 +137,7 @@
 	    <version>1.2</version>
 	</dependency>
 	
-	<!-- 模拟客户端使用的依赖 -->
-	<dependency>
-  	<groupId>com.squareup.okhttp3</groupId>
-  	<artifactId>okhttp</artifactId>
-  	<version>3.11.0</version>
-	</dependency>
-	
-	<dependency>
-	 <groupId>com.google.guava</groupId>
-	 <artifactId>guava</artifactId>
-	 <version>26.0-jre</version>
-	 <!-- or, for Android: -->
-	 <!-- <version>26.0-android</version> -->
-	</dependency>
-	
-  	<dependency>
-  		<groupId>com.farubaba</groupId>
-  		<artifactId>root-feature</artifactId>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.farubaba</groupId>
-  		<artifactId>base-feature</artifactId>
-  	</dependency>
+  	<!-- 直接依赖的module -->
   	<dependency>
   		<groupId>com.farubaba</groupId>
   		<artifactId>okhttp-feature</artifactId>

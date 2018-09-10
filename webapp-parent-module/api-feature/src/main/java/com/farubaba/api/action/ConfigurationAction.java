@@ -15,8 +15,8 @@ import org.business.domain.model.Data;
 import org.business.domain.model.User;
 import org.business.domain.service.ConfigService;
 import org.business.domain.service.SysConfigService;
-import org.root.feature.utils.ServerUtil;
 
+import com.farubaba.api.utils.ServerUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.opensymphony.xwork2.ActionSupport;

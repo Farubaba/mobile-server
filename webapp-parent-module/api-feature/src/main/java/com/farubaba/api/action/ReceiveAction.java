@@ -10,8 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts2.ServletActionContext;
 import org.root.feature.utils.CloseUtil;
 import org.root.feature.utils.IOUtil;
-import org.root.feature.utils.ServerUtil;
 
+import com.farubaba.api.utils.ServerUtil;
 import com.opensymphony.xwork2.ActionSupport;
 
 public class ReceiveAction extends ActionSupport {
