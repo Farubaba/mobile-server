@@ -7,9 +7,11 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>base-feature</artifactId>
+  <groupId>com.farubaba</groupId>
+  <artifactId>okhttp-feature</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
 
-  <name>base-feature</name>
+  <name>okhttp-feature</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
@@ -17,6 +19,10 @@
   	<dependency>
   		<groupId>com.farubaba</groupId>
   		<artifactId>root-feature</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.farubaba</groupId>
+  		<artifactId>base-feature</artifactId>
   	</dependency>
   </dependencies>
 </project>

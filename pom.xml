@@ -9,6 +9,8 @@
   <modules>
     <module>root-feature</module>
     <module>base-feature</module>
+    <module>business-domain</module>
+    <module>okhttp-feature</module>
     <module>webapp-parent-module</module>
   </modules>
   
@@ -52,7 +54,17 @@
 			<artifactId>base-feature</artifactId>
 			<version>${feature.version}</version>
 		</dependency>
-		
+		<dependency>
+	  		<groupId>com.farubaba</groupId>
+	  		<artifactId>okhttp-feature</artifactId>
+	  		<version>${feature.version}</version>
+	  	</dependency>
+		<dependency>
+  			<groupId>com.farubaba</groupId>
+  			<artifactId>business-domain</artifactId>
+  			<version>${feature.version}</version>
+  		</dependency>
+  	
 		<dependency>
 			<groupId>com.farubaba</groupId>
 			<artifactId>api-feature</artifactId>
@@ -74,13 +86,15 @@
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
+	<!--     
+	<dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
-      <!-- Junit也是可以在compile中在代码里使用的，但通常我们都只在测试中使用，这里是为了方便直接在代码中使用断言才加入compile依赖 -->
-      <scope>compile</scope>
+      Junit也是可以在compile中在代码里使用的，但通常我们都只在测试中使用，这里是为了方便直接在代码中使用断言才加入compile依赖
+      <scope>compile</scope> 
     </dependency>
+    -->
     <dependency>
 	  <groupId>javax</groupId>
 	  <artifactId>javaee-api</artifactId>
