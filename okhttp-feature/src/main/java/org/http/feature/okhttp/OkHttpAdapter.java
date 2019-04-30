@@ -3,6 +3,8 @@ package org.http.feature.okhttp;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -10,6 +12,9 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -30,13 +35,15 @@ import org.base.feature.http.body.StreamRequestBody;
 import org.base.feature.http.body.StringRequestBody;
 import org.base.feature.http.impl.HttpAdapter;
 import org.base.feature.http.impl.HttpMethod;
-import org.base.feature.http.impl.IModelResultCallback;
+import org.base.feature.http.impl.RequestCallback;
 import org.base.feature.http.impl.RequestContext;
 import org.base.feature.http.impl.RequestHandler;
+import org.base.feature.http.ssl.MobileSSLUtil;
 import org.root.feature.interf.IModel;
 import org.root.feature.interf.impl.ErrorResult;
 import org.root.feature.json.JsonFactory;
 import org.root.feature.json.JsonService;
+import org.root.feature.json.JsonType;
 import org.root.feature.utils.CloseUtil;
 import org.root.feature.utils.IOUtil;
 
@@ -82,15 +89,24 @@ import okio.BufferedSink;
  */
 public class OkHttpAdapter implements HttpAdapter{
 	
+	private OkHttpClient.Builder builder;
 	private OkHttpClient okHttpClient;
 	private JsonService<?> jsonService = JsonFactory.getJsonService();
 	
 	public OkHttpAdapter(){
-		okHttpClient = new OkHttpClient.Builder()
-				.connectTimeout(20, TimeUnit.SECONDS)
-				.writeTimeout(20, TimeUnit.SECONDS)
-				.readTimeout(30, TimeUnit.SECONDS)
-				.build();
+		builder = new OkHttpClient.Builder();
+		try {
+			okHttpClient = builder
+					.sslSocketFactory(MobileSSLUtil.getSSLSocketFactory(),MobileSSLUtil.getX509TrustManager())
+					.hostnameVerifier(MobileSSLUtil.getHostNameVerifier())
+					.connectTimeout(20, TimeUnit.SECONDS)
+					.writeTimeout(20, TimeUnit.SECONDS)
+					.readTimeout(30, TimeUnit.SECONDS)
+					.build();
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | CertificateException
+				| IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public OkHttpClient.Builder newBuilder(OkHttpAdapter okHttpAdapter){
@@ -104,6 +120,7 @@ public class OkHttpAdapter implements HttpAdapter{
 				.writeTimeout(10, TimeUnit.SECONDS)
 				.readTimeout(30, TimeUnit.SECONDS)
 				.pingInterval(3 * 1000l, TimeUnit.MILLISECONDS)
+				//FIXME 当前代理只支持HTTP，不支持HTTPS
 				.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
 				.cache(new Cache(cacheFileDir, 10 * 1024 * 1024)) //10M
 				
@@ -334,7 +351,7 @@ public class OkHttpAdapter implements HttpAdapter{
 		return this;
 	}
 	
-	private <M extends IModel> Request.Builder prepareRequestBuilder(RequestContext<M> requestContext){
+	private <M extends IModel, RESULT> Request.Builder prepareRequestBuilder(RequestContext<M,RESULT> requestContext){
 		Request.Builder requestBuilder = new Request.Builder();
 		setHeader(requestContext, requestBuilder);
 		addHeaders(requestContext, requestBuilder);
@@ -363,7 +380,7 @@ public class OkHttpAdapter implements HttpAdapter{
 		}
 	}
 	
-	private <M extends IModel> RequestBody prepareRequestBodyIfNeed(RequestContext<M> requestContext, Builder requestBuilder) {
+	private <M extends IModel,RESULT> RequestBody prepareRequestBodyIfNeed(RequestContext<M,RESULT> requestContext, Builder requestBuilder) {
 		Body body = requestContext.getRequestBody();
 		RequestBody requestBody = convertToRequestBody(body);
 		return requestBody;
@@ -509,7 +526,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	 * @param requestContext
 	 * @param requestBuilder
 	 */
-	private <M extends IModel> void addHeaders(RequestContext<M> requestContext, Request.Builder requestBuilder) {
+	private <M extends IModel,RESULT> void addHeaders(RequestContext<M,RESULT> requestContext, Request.Builder requestBuilder) {
 		ListMultimap<String, String> multiHeaders = requestContext.getHeaders();
 		Set<String> multiHeaderKeys = multiHeaders.keySet();
 		for(String key : multiHeaderKeys){
@@ -527,7 +544,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	 * @param builder
 	 * @return
 	 */
-	private <M extends IModel> Request.Builder setHeader(RequestContext<M> requestContext,Request.Builder builder){
+	private <M extends IModel,RESULT> Request.Builder setHeader(RequestContext<M,RESULT> requestContext,Request.Builder builder){
 		Map<String,String> header = requestContext.getHeader();
 		Set<String> headerKeys = header.keySet();
 		for(String key : headerKeys){
@@ -537,7 +554,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	}
 
 	@Override
-	public <M extends IModel> RequestHandler sendDefaultRequest(RequestContext<M> requestContext) {
+	public <M extends IModel,RESULT> RequestHandler sendDefaultRequest(RequestContext<M,RESULT> requestContext) {
 		Request request = prepareRequestBuilder(requestContext).build();
 		//okHttpClient.newBuilder().build().newCall(request);
 		Call call = getOkHttpClient().newCall(request);
@@ -551,23 +568,34 @@ public class OkHttpAdapter implements HttpAdapter{
 		return requestHandler;
 	}
 
-	private <M extends IModel> void enqueueRequest(Call call, RequestContext<M> requestContext) {
+	private <M extends IModel,RESULT > void enqueueRequest(Call call, RequestContext<M,RESULT> requestContext) {
 		call.enqueue(new Callback() {
 			@Override
 			public void onResponse(Call call, Response response) throws IOException {
+				final RequestCallback<M> callback = requestContext.getCallback();
 				if(response.isSuccessful()){
 					try{
 						String jsonString = response.body().string();
 						System.out.println("jsonString = "+ jsonString);
-						IModelResultCallback<M> callback = requestContext.getCallback();
-						if(callback != null){
-							callback.onSuccess(jsonService.fromJson(jsonString, requestContext.getResultClass()));	
+						JsonType jsonType = jsonService.getJsonType(jsonString);
+						
+						if(jsonType.isObject()) {
+							M m = jsonService.fromJson(jsonString, requestContext.getResultModelClass());
+							if(callback != null) {
+								callback.onSuccess(m);
+							}
+						}else if(jsonType.isArray()) {
+							List<M> list = jsonService.fromJsonToList(jsonString, requestContext.getResultModelClass());
+							if(callback != null) {
+								callback.onSuccess(list);
+							}
 						}
 					}catch (Exception e) {
 						e.printStackTrace();
 						//FIXME 不同的Exception可以用来区分不用的错误逻辑，不如：认证失败，协议错误，等
 						IOException ioe = new IOException(e);
-						onFailure(call, ioe);
+						ErrorResult error = new ErrorResult(1001, "异常信息："+ ioe.getMessage(), ioe.getLocalizedMessage());
+						callback.onFailure(error);
 					}
 				}
 			}
@@ -576,7 +604,7 @@ public class OkHttpAdapter implements HttpAdapter{
 			public void onFailure(Call call, IOException e) {
 				//FIXME 这里可以根据实际中需要，不断完善错误类型。
 				e.printStackTrace();
-				IModelResultCallback<M> callback = requestContext.getCallback();
+				RequestCallback<M> callback = requestContext.getCallback();
 				ErrorResult errorResult = new ErrorResult(-1, "根据实际需要，扩充错误类型,例如：json语法错误，authority错误，SSL证书错误等等", "其他错误，不特殊处理");
 				if(callback != null){
 					if(call.isCanceled()){
@@ -592,7 +620,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	}
 
 	@Override
-	public <M extends IModel> RequestHandler sendTimeoutRequest(RequestContext<M> requestContext) {
+	public <M extends IModel,RESULT> RequestHandler sendTimeoutRequest(RequestContext<M,RESULT> requestContext) {
 		Request request = prepareRequestBuilder(requestContext).build();
 		//配置单个Request
 		OkHttpClient client = getOkHttpClient().newBuilder()
@@ -617,7 +645,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	}
 	
 	@Override
-	public <M extends IModel> RequestHandler sendAuthenticatorRequest(RequestContext<M> requestContext) {
+	public <M extends IModel,RESULT> RequestHandler sendAuthenticatorRequest(RequestContext<M,RESULT> requestContext) {
 		Request request = prepareRequestBuilder(requestContext).build();
 		//配置单个Request
 		OkHttpClient client = getOkHttpClient().newBuilder()
@@ -676,7 +704,7 @@ public class OkHttpAdapter implements HttpAdapter{
 	}
 
 	@Override
-	public <M extends IModel> RequestHandler sendInterceptorRequest(RequestContext<M> requestContext) {
+	public <M extends IModel,RESULT> RequestHandler sendInterceptorRequest(RequestContext<M,RESULT> requestContext) {
 		Request request = prepareRequestBuilder(requestContext).build();
 		//配置单个Request
 		OkHttpClient client = getOkHttpClient().newBuilder()

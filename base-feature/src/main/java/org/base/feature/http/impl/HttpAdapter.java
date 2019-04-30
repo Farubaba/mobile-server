@@ -8,8 +8,8 @@ import org.root.feature.interf.IModel;
  *
  */
 public interface HttpAdapter {
-	public <M extends IModel> RequestHandler sendDefaultRequest(RequestContext<M> requestContext);
-	public <M extends IModel> RequestHandler sendTimeoutRequest(RequestContext<M> requestContext);
-	public <M extends IModel> RequestHandler sendAuthenticatorRequest(RequestContext<M> requestContext);
-	public <M extends IModel> RequestHandler sendInterceptorRequest(RequestContext<M> requestContext);
+	public <M extends IModel,RESULT> RequestHandler sendDefaultRequest(RequestContext<M,RESULT> requestContext);
+	public <M extends IModel,RESULT> RequestHandler sendTimeoutRequest(RequestContext<M,RESULT> requestContext);
+	public <M extends IModel,RESULT> RequestHandler sendAuthenticatorRequest(RequestContext<M,RESULT> requestContext);
+	public <M extends IModel,RESULT> RequestHandler sendInterceptorRequest(RequestContext<M,RESULT> requestContext);
 }

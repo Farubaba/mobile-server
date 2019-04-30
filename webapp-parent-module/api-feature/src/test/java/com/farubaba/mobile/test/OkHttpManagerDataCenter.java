@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import org.base.feature.http.HttpManager;
+import org.base.feature.http.body.HttpManager;
 import org.base.feature.http.body.StringRequestBody;
 import org.base.feature.http.impl.HttpMethod;
-import org.base.feature.http.impl.IModelResultCallback;
 import org.base.feature.http.impl.MimeType;
+import org.base.feature.http.impl.RequestCallback;
 import org.base.feature.http.impl.RequestContext;
 import org.base.feature.http.impl.RequestHandler;
 import org.base.feature.http.model.ObjectErrorModel;
@@ -18,6 +18,8 @@ import org.http.feature.okhttp.OkHttpAdapter;
 import org.junit.Test;
 import org.root.feature.interf.impl.ErrorResult;
 import org.root.feature.utils.ConcurrentUtil;
+
+import com.farubaba.api.singleton.AppConfig;
 
 
 /**
@@ -45,25 +47,40 @@ public class OkHttpManagerDataCenter {
 	 * fengjr601是bks格式文件证书密码
 	 *
 	 */
-	public static final String port = "8443";
-	public static final String API_CONTEXT= "http://127.0.0.1:"+port+"/test-webapp/";
-	String domain = "http://127.0.0.1:"+port+"/test-webapp";
+	public static final String API_CONTEXT= AppConfig.getInstance().getUrlWithContextPath();
 	String patternUrl = "api/user/v2?name=%1$s&name=%2$s";
-	String fullUrl = "http://127.0.0.1:"+port+"/test-webapp/api/user/getUsersApi?name=%1$s&name=%2$s";
+	String fullUrl = API_CONTEXT + "api/user/getUsersApi?name=%1$s&name=%2$s";
 	
 	@Test
 	public void okHttpGetTest(){
 	
+		CountDownLatch counter = ConcurrentUtil.newSingleStepCountDownLatch();
 		OkHttpAdapter manager = new OkHttpAdapter();
 		Map<String,String> querys = new HashMap<String, String>();
 		querys.put("name", "namevalue-from-map");
 		querys.put("pwd", "123");
-		RequestContext<ListUser> requestContext = new RequestContext<ListUser>()
-				.setDomain(domain)
+		RequestCallback<ListUser> callback = new RequestCallback<ListUser>() {
+			@Override
+			public void onSuccess(ListUser result) {
+				super.onSuccess(result);
+				ConcurrentUtil.countDown(counter);
+			}
+			
+			@Override
+			public void onFailure(ErrorResult error) {
+				super.onFailure(error);
+				ConcurrentUtil.countDown(counter);
+			}
+		};
+		
+		RequestContext<ListUser,ListUser> requestContext = new RequestContext<ListUser,ListUser>()
+				.setDomain(API_CONTEXT)
 				.setUrl(String.format(patternUrl, "valueOfName1","valueOfName2"))
-				.setQuerys(querys);
+				.setQuerys(querys)
+				.setCallback(callback);
 				
 		manager.sendDefaultRequest(requestContext);
+		ConcurrentUtil.await(counter);
 	}
 	
 	
@@ -75,8 +92,8 @@ public class OkHttpManagerDataCenter {
 		querys.put("name", "namevalue-from-map2");
 		querys.put("pwd", "123456");
 		
-		RequestContext<ListUser> requestContext = new RequestContext<ListUser>();
-		requestContext.setDomain(domain)
+		RequestContext<ListUser,ListUser> requestContext = new RequestContext<ListUser,ListUser>();
+		requestContext.setDomain(API_CONTEXT)
 				.setUrl(String.format(fullUrl, "valueOfName11","valueOfName22"))
 				.setQuerys(querys);
 				
@@ -88,12 +105,12 @@ public class OkHttpManagerDataCenter {
 	
 		System.out.println("发送请求的线程ID ："+Thread.currentThread().getId());
 		
-		HttpManager httpManager = HttpManager.getInstance();
+		HttpManager manager = HttpManager.getInstance(new OkHttpAdapter());
 		Map<String,String> querys = new HashMap<String, String>();
 		querys.put("name", "namevalue-from-map2-asyc");
 		querys.put("pwd", "123456");
 		
-		IModelResultCallback<ListUser2> callback = new IModelResultCallback<ListUser2>() {
+		RequestCallback<ListUser2> callback = new RequestCallback<ListUser2>() {
 			@Override
 			public void onSuccess(ListUser2 result) {
 					String name = result.getData().get(0).getUsername();
@@ -108,15 +125,16 @@ public class OkHttpManagerDataCenter {
 				
 			}
 		};
-		RequestContext<ListUser2> requestContext = new RequestContext<ListUser2>()
-				.setDomain(domain)
+		
+		RequestContext<ListUser2, ListUser2> requestContext = new RequestContext<ListUser2,ListUser2>()
+				.setDomain(API_CONTEXT)
 				.setUrl(String.format(fullUrl, "valueOfName11","valueOfName22"))
 				.setQuerys(querys)
 				.setCallback(callback)
-				.setResultClass(ListUser2.class);
+				.setResultModelClass(ListUser2.class);
 	
 				
-		httpManager.sendDefaultRequest(requestContext);
+		manager.sendDefaultRequest(requestContext);
 	}
 	
 	@Test
@@ -124,14 +142,15 @@ public class OkHttpManagerDataCenter {
 	
 		System.out.println("发送请求的线程ID ："+Thread.currentThread().getId());
 		
-		HttpManager httpManager = HttpManager.getInstance();
+		HttpManager manager = HttpManager.getInstance(new OkHttpAdapter());
 		
 		Map<String,String> querys = new HashMap<String, String>();
 		querys.put("name", "namevalue-from-map2-asyc-test2");
 		querys.put("pwd", "1234567890");
 		
 		final CountDownLatch countDownLatch = ConcurrentUtil.newSingleStepCountDownLatch();
-		IModelResultCallback<ListUser2> callback = new IModelResultCallback<ListUser2>() {
+		
+		RequestCallback<ListUser2> callback = new RequestCallback<ListUser2>() {
 			@Override
 			public void onSuccess(ListUser2 result) {
 					String name = result.getData().get(0).getUsername();
@@ -148,16 +167,17 @@ public class OkHttpManagerDataCenter {
 			}
 		};
 		
-		RequestContext<ListUser2> requestContext = new RequestContext<ListUser2>()
+		
+		RequestContext<ListUser2,ListUser2> requestContext = new RequestContext<ListUser2,ListUser2>()
 				//.setDomain(domain)
 				.setUrl(String.format(fullUrl, "valueOfName11","valueOfName22"))
 				.setQuerys(querys)
 				.setCallback(callback)
-				.setResultClass(ListUser2.class);
+				.setResultModelClass(ListUser2.class);
 		
-		RequestHandler handler = httpManager.sendDefaultRequest(requestContext);
+		RequestHandler handler = manager.sendDefaultRequest(requestContext);
 		//you can cancel request like below:
-		handler.cancelRequest();
+		//handler.cancelRequest();
 		try {
 			countDownLatch.await();
 		} catch (InterruptedException e) {
@@ -169,18 +189,18 @@ public class OkHttpManagerDataCenter {
 	@Test
 	public void httpManagerPostString(){
 		final CountDownLatch countDownLatch = ConcurrentUtil.newSingleStepCountDownLatch();
-		String postStringUrlWithUrlParamter = "http://127.0.0.1:"+port+"/test-webapp/api/bussiness/postString?name=%1$s&pwd=%2$s";
-		postStringUrlWithUrlParamter = "https://127.0.0.1:"+port+"/test-webapp/api/bussiness/postString?name=%1$s&pwd=%2$s";
+		String postStringUrlWithUrlParamter = API_CONTEXT + "api/bussiness/postString?name=%1$s&pwd=%2$s";
+		postStringUrlWithUrlParamter = API_CONTEXT + "api/bussiness/postString?name=%1$s&pwd=%2$s";
 		String bodyContent = "hello body, this is the message post by a beautiful girl, who lives on the other size of the earth, don't you exciting?";
-		HttpManager manager = HttpManager.getInstance();
-		RequestContext<ObjectErrorModel> requestContext = new RequestContext<ObjectErrorModel>()
+		HttpManager manager = HttpManager.getInstance(new OkHttpAdapter());
+		RequestContext<ObjectErrorModel,ObjectErrorModel> requestContext = new RequestContext<ObjectErrorModel,ObjectErrorModel>()
 				.setUrl(String.format(postStringUrlWithUrlParamter, "lzg", "123"))
 				.setMethod(HttpMethod.POST)
 				.setRequestBody(new StringRequestBody()
 						.setMimeType(MimeType.TEXT_X_MARKDOWN)
 						.setBodyContent(bodyContent))
-				.setResultClass(ObjectErrorModel.class)
-				.setCallback(new IModelResultCallback<ObjectErrorModel>() {
+				.setResultModelClass(ObjectErrorModel.class)
+				.setCallback(new RequestCallback<ObjectErrorModel>() {
 					@Override
 					public void onSuccess(ObjectErrorModel result) {
 						System.out.println("正确返回 : result.display = " + result.getDisplay() );

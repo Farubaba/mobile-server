@@ -1,9 +1,12 @@
 package org.root.feature.json;
 
+import java.util.List;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 public class GsonService implements JsonService<JsonElement> {
 
@@ -25,6 +28,20 @@ public class GsonService implements JsonService<JsonElement> {
 	}
 
 	@Override
+	public <A> List<A> fromJsonToList(String jsonString, Class<A> classOfA) {
+		if(getJsonType(jsonString).isArray()) {
+			return gson.fromJson(jsonString, new TypeToken<List<A>>(){}.getType());
+		}
+		return null;
+	}
+
+	@Override
+	public <B> void handleJson(String jsonString, Class<B> clazz) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
 	public JsonElement parseJsonElement(String jsonString){
 		if(jsonString != null){
 			try{
@@ -36,84 +53,74 @@ public class GsonService implements JsonService<JsonElement> {
 		}
 		return null;
 	}
-	
-	/**
-	 * 判断给定的字符串是否是合法的JSON字符串
-	 * @param jsonString
-	 * @return
-	 */
+
 	@Override
-	public boolean isValidJson(String jsonString){
-		JsonElement jsonElement = parseJsonElement(jsonString);
-		if(jsonElement != null){
-			return true;
+	public JsonType getJsonType(String jsonString) {
+		if(jsonString != null) {
+			System.out.println(jsonString);
 		}
-		return false;
-	}
-	
-	@Override
-	public boolean isValidJsonObject(String jsonString){
 		JsonElement jsonElement = parseJsonElement(jsonString);
-		if(jsonElement != null && jsonElement.isJsonObject()){
-			return true;
+		JsonType jsonType = new JsonType();
+		if(jsonElement == null) {
+			jsonType.setValid(false);
 		}
-		return false;
-	}
-	
-	@Override
-	public boolean isValidJsonArray(String jsonString){
-		JsonElement jsonElement = parseJsonElement(jsonString);
-		if(jsonElement != null && jsonElement.isJsonArray()){
-			return true;
+		if(jsonElement != null) {
+			if(jsonElement.isJsonArray()) {
+				jsonType.setArray(true);
+			}else if(jsonElement.isJsonObject()) {
+				jsonType.setObject(true);
+			}else if(jsonElement.isJsonPrimitive()) {
+				jsonType.setPrimitive(true);
+			}else if(jsonElement.isJsonNull()) {
+				jsonType.setJsonNull(true);
+			}
 		}
-		return false;
-	}
-	
-	@Override
-	public boolean isValidJsonNull(String jsonString){
-		JsonElement jsonElement = parseJsonElement(jsonString);
-		if(jsonElement != null && jsonElement.isJsonNull()){
-			return true;
-		}
-		return false;
-	}
-	
-	@Override
-	public boolean isValidJsonPrimitive(String jsonString){
-		JsonElement jsonElement = parseJsonElement(jsonString);
-		if(jsonElement != null && jsonElement.isJsonPrimitive()){
-			return true;
-		}
-		return false;
+		return jsonType;
 	}
 
 	@Override
-	public boolean isValidJson(JsonElement jsonElement) {
-		if(jsonElement != null){
-			return true;
+	public boolean isValidJson(JsonType jsonType) {
+		if(jsonType == null) {
+			return false;
+		}else {
+			return jsonType.isValid();
 		}
-		return false;
 	}
 
 	@Override
-	public boolean isValidJsonObject(JsonElement jsonElement) {
-		return jsonElement != null && jsonElement.isJsonObject();
+	public boolean isValidJsonObject(JsonType jsonType) {
+		if(jsonType == null) {
+			return false;
+		}else {
+			return jsonType.isObject();
+		}
 	}
 
 	@Override
-	public boolean isValidJsonArray(JsonElement jsonElement) {
-		return jsonElement != null && jsonElement.isJsonArray();
+	public boolean isValidJsonArray(JsonType jsonType) {
+		if(jsonType == null) {
+			return false;
+		}else {
+			return jsonType.isArray();
+		}
 	}
 
 	@Override
-	public boolean isValidJsonNull(JsonElement jsonElement) {
-		return jsonElement != null && jsonElement.isJsonNull();
+	public boolean isValidJsonNull(JsonType jsonType) {
+		if(jsonType == null) {
+			return false;
+		}else {
+			return jsonType.isJsonNull();
+		}
 	}
 
 	@Override
-	public boolean isValidJsonPrimitive(JsonElement jsonElement) {
-		return jsonElement != null && jsonElement.isJsonPrimitive();
+	public boolean isValidJsonPrimitive(JsonType jsonType) {
+		if(jsonType == null) {
+			return false;
+		}else {
+			return jsonType.isPrimitive();
+		}
 	}
-	
-	
+
 }

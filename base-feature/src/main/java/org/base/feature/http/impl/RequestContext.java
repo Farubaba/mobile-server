@@ -5,7 +5,9 @@ import java.util.Map;
 
 import org.base.feature.http.body.Body;
 import org.base.feature.http.model.ErrorResultType;
+import org.root.feature.interf.IDataCallback;
 import org.root.feature.interf.IModel;
+import org.root.feature.interf.impl.ErrorResult;
 import org.root.feature.utils.UrlUtil;
 
 import com.google.common.collect.ListMultimap;
@@ -30,14 +32,14 @@ import com.google.common.collect.MultimapBuilder;
  * @author violet
  *
  */
-public class RequestContext<M extends IModel> implements IRequestContext {
+public class RequestContext<M extends IModel, RESULT> implements IRequestContext {
 	public static final String CHARSET = "utf-8";
 	public static final String PROTOCOL_CONTENT_TYPE_JSON = String.format("application/json; charset=%s", CHARSET);
     public static String PROTOCOL_CONTENT_TYPE_X_WWW_FORM_URLENCODED = String.format("application/x-www-form-urlencoded; charset=%s", CHARSET);
     /**
      * 需要将jsonString 转化的目标java类型
      */
-    private Class<M> resultClass;
+    private Class<M> resultModelClass;
     private ErrorResultType errorResultType = ErrorResultType.ErrorResult;
     
 	private int domainType;
@@ -66,7 +68,7 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 	//MultiPart
 	//stream
 	//callback
-	private  IModelResultCallback<M> callback;
+	private RequestCallback<M> callback;
 	//response code
 	//response header
 	//response body
@@ -75,8 +77,8 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 		if(this.domain == null || !UrlUtil.isAbsolutedPath(this.domain)){
 			this.domain = DomainFactory.getDomain(domainType);	
 		}
-		if(!this.domain.endsWith(UrlUtil.PATH_SEPERATOR)){
-			this.domain = this.domain + UrlUtil.PATH_SEPERATOR;
+		if(!this.domain.endsWith(UrlUtil.SEPERATOR_PATH)){
+			this.domain = this.domain + UrlUtil.SEPERATOR_PATH;
 		}
 		if(this.domain == null){
 			this.domain = UrlUtil.EMPTY_STRING;
@@ -84,7 +86,7 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 		return this.domain;
 	}
 
-	public RequestContext<M> setDomain(String domain) {
+	public RequestContext<M,RESULT> setDomain(String domain) {
 		this.domain = domain;
 		return this;
 	}
@@ -116,67 +118,63 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 	
 	
 
-	public RequestContext<M> setUrl(String url) {
+	public RequestContext<M,RESULT> setUrl(String url) {
 		this.url = url;
 		return this;
 	}
 	public HttpMethod getMethod() {
 		return method;
 	}
-	public RequestContext<M> setMethod(HttpMethod method) {
+	public RequestContext<M,RESULT> setMethod(HttpMethod method) {
 		this.method = method;
 		return this;
 	}
 	public Map<String, String> getHeader() {
 		return header;
 	}
-	public RequestContext<M> setHeader(Map<String, String> header) {
+	public RequestContext<M,RESULT> setHeader(Map<String, String> header) {
 		this.header = header;
 		return this;
 	}
 	public ListMultimap<String, String> getHeaders() {
 		return headers;
 	}
-	public RequestContext<M> setHeaders(ListMultimap<String, String> headers) {
+	public RequestContext<M,RESULT> setHeaders(ListMultimap<String, String> headers) {
 		this.headers = headers;
 		return this;
 	}
 	public Map<String, String> getQuerys() {
 		return querys;
 	}
-	public RequestContext<M> setQuerys(Map<String, String> querys) {
+	public RequestContext<M,RESULT> setQuerys(Map<String, String> querys) {
 		this.querys = querys;
 		return this;
 	}
 	
-	public Class<M> getResultClass() {
-		return resultClass;
-	}
-
-	public RequestContext<M> setResultClass(Class<M> resultClass) {
-		this.resultClass = resultClass;
+	public RequestContext<M,RESULT> setResultModelClass(Class<M> resultModelClass) {
+		this.resultModelClass = resultModelClass;
 		return this;
+	}
+	
+	public Class<M> getResultModelClass() {
+		return resultModelClass;
 	}
 
 	public int getDomainType() {
 		return domainType;
 	}
 
-	public RequestContext<M> setDomainType(int domainType) {
+	public RequestContext<M,RESULT> setDomainType(int domainType) {
 		this.domainType = domainType;
 		return this;
 	}
-	
-	public IModelResultCallback<M> getCallback() {
+
+	public RequestCallback<M> getCallback() {
 		return callback;
 	}
 
-	public RequestContext<M> setCallback(IModelResultCallback<M> callback) {
+	public RequestContext<M,RESULT> setCallback(RequestCallback<M> callback) {
 		this.callback = callback;
-		if(this.callback == null){
-			// FIXME 
-			//throw exception or print error log.
-		}
 		return this;
 	}
 
@@ -184,7 +182,7 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 		return errorResultType;
 	}
 
-	public RequestContext<M> setErrorResultType(ErrorResultType errorResultType) {
+	public RequestContext<M,RESULT> setErrorResultType(ErrorResultType errorResultType) {
 		this.errorResultType = errorResultType;
 		return this;
 	}
@@ -193,7 +191,7 @@ public class RequestContext<M extends IModel> implements IRequestContext {
 		return requestBody;
 	}
 
-	public RequestContext<M> setRequestBody(Body requestBody) {
+	public RequestContext<M,RESULT> setRequestBody(Body requestBody) {
 		this.requestBody = requestBody;
 		return this;
 	}

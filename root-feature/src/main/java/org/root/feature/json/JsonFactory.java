@@ -46,8 +46,8 @@ public class JsonFactory {
 			//FIXME if you want replace GSON with Jackson
 			//you are also required to create JacksonService.java like GsonService.java
 		case MOSHI:
-			//FIXME if you want replace GSON with Jackson
-			//you are also required to create JacksonService.java like GsonService.java
+			//FIXME if you want replace GSON with MOSHI
+			//you are also required to create MOSHIService.java like GsonService.java
 		default:
 			return GsonService.getInstance();
 		}

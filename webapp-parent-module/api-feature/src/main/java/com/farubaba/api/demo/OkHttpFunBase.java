@@ -1,22 +1,48 @@
 
 package com.farubaba.api.demo;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.jsp.jstl.core.Config;
+
+import org.base.feature.http.ssl.MobileSSLUtil;
 import org.business.domain.model.User;
 import org.root.feature.utils.ConcurrentUtil;
 import org.root.feature.utils.UrlUtil;
 
+import com.farubaba.api.singleton.AppConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -34,12 +60,23 @@ import okio.BufferedSink;
  *
  */
 public class OkHttpFunBase {
-	public static final String API_CONTEXT= "http://127.0.0.1:"+UrlUtil.PORT+"/"+UrlUtil.CONTEXT_PATH+"/";
+	public static final String API_CONTEXT= AppConfig.getInstance().getUrlWithContextPath();
 	public static final Gson gson = new GsonBuilder().create();
-	OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
-			//设置代理，让Charles拦截请求
-			.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888)))
-			.build();
+	
+	OkHttpClient okHttpClient = null;
+	OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+			
+	public OkHttpFunBase() {
+		try {
+			okHttpClient = builder.sslSocketFactory(MobileSSLUtil.getSSLSocketFactory(),MobileSSLUtil.getX509TrustManager())
+					.hostnameVerifier(MobileSSLUtil.getHostNameVerifier())
+					.build();
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | CertificateException
+				| IOException e) {
+			e.printStackTrace();
+		}
+			
+	}
 	/**
 	 * 参考 {@link OkHttpAction#getUserListApi()}}
 	 * @return
@@ -48,6 +85,7 @@ public class OkHttpFunBase {
 		Request request = new Request.Builder()
 				.url(API_CONTEXT + "api/user/v2")
 				.build();
+		System.out.println("URL = " + request.url().toString());
 		Call call = okHttpClient.newCall(request);
 		Response response;
 		try {
@@ -62,6 +100,31 @@ public class OkHttpFunBase {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return null;
+	}
+	
+	public String synchronousGetListUserOtherSite(){
+		Request request = new Request.Builder()
+				//.url("https://farubaba.github.io/")
+				//.url("https://www.baidu.com/")
+				.url("https://github.com/")
+				.build();
+		System.out.println("URL = " + request.url().toString());
+		Call call = okHttpClient.newCall(request);
+		Response response;
+		try {
+			response = call.execute();
+			if(response.isSuccessful()){
+				String result = response.body().string();
+				return result;
+			}
+		} catch (IOException e) {
+			if(e instanceof SSLHandshakeException){
+				System.out.println("SSL 证书错误，okhttp没有预装信任 "+request.url()+ "对应的CA，目前只信任farubaba.cer证书。只能访问www.farubaba.com");
+			}
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 	

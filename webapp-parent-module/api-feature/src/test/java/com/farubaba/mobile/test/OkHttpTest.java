@@ -26,6 +26,17 @@ public class OkHttpTest {
 		System.setProperty("http.proxyPort", "8888");
 	}
 	
+	/**
+	 * 这个方法目前测试会失败，因为okhttp当前只信任farubaba.cer证书，并没有提供默认的CA信任连，
+	 * 所以通过https只能访问www.farubaba.com网站，其他所有网站都会出现证书错误：PKI 错误
+	 */
+	@Test
+	public void testSynchronousGetOtherSite(){
+		String farubabaIO = okHttpBase.synchronousGetListUserOtherSite();
+		assertNotNull(farubabaIO);
+		assertTrue(farubabaIO.contains("人生总是柳暗花明，只怕你停了脚步，丧了意志！"));
+	}
+	
 	@Test
 	public void testSynchronousGet(){
 		List<User> users = okHttpBase.synchronousGetListUser();
