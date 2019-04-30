@@ -3,17 +3,24 @@
 
 [maven多module项目结构]
 
-### mobile-server项目结构说明
+### mobile-server 多 module 项目结构说明
+
+项目创建过程中使用到两个maven archetype:
+
+1) maven-archetype-quickstart，创建root、base、okhttp module 时使用。
+
+2) maven-archetype-webapp，创建api、another-web、test module 时使用。
 
 ```
-mobile-server
-	----root-feature	
-	----base-feature
-	----okhttp-feature
-	----webapp-feature
-		----api-feature
-		----another-web-feature
-		----test-feature
+【project】mobile-server
+	----【module】root-feature	
+	----【module】base-feature
+	----【module】okhttp-feature
+	----【module】webapp-feature
+		----【module】api-feature
+		----【module】another-web-feature
+		----【module】knowledge-base
+		----【module】test-feature
 		
 mobile-server: 包含多个module的项目名称（a simple maven project，no archetype）
 root-feature : 所有通用基础库（maven-archetype-quickstart）
@@ -21,8 +28,9 @@ base-feature : 二次封装的基础类库（maven-archetype-quickstart）
 okhttp-feature : 依赖okhttp，对okhttp二次封装，http相关抽象都被集成在了base-feature中，该module是基于base-feature来开发，base-feature并不依赖于okhttp
 
 webapp-feature : pom类型module，只是一个包含多个module的容器（a simple maven project， no archetype）
-api-feature ： 通过struts实现，并提供给外部调用者api支持的web服务器（maven-archetype-webapp）
-another-web-feature ： 另一个web服务器，这里只是作为示例，并没有实现什么功能。（maven-archetype-webapp）
+api-feature : 通过struts实现，并提供给外部调用者api支持的web服务器（maven-archetype-webapp）
+another-web-feature: 另一个web服务器，这里只是作为示例，并没有实现什么功能。（maven-archetype-webapp）
+knowledge-base : 另一个web服务器，这将用来管理知识库文档。（maven-archetype-webapp）
 test-feature : 可以独立运行的server，早期完整版单独module的mobile-server项目
 
 ```
