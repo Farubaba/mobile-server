@@ -13,7 +13,6 @@
     <module>api-feature</module>
     <module>another-webapp</module>
     <module>test-webapp</module>
-    <module>knowledge-base</module>
   </modules>
   
   <dependencies>
